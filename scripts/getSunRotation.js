@@ -1,9 +1,7 @@
 const Reactive = require("Reactive");
 const Scene = require("Scene");
-const Time = require("Time");
-export const Patches = require("Patches");
+const Patches = require("Patches");
 export const Diagnostics = require("Diagnostics");
-export const Global = {};
 
 // get directional light, calculate its rotation matrix, and return as signals
 Promise.all([Scene.root.findFirst("Sun")]).then(function (objects) {
