@@ -28,7 +28,8 @@ Promise.all([
   Scene.root.findFirst("Sun"),
   Scene.root.findFirst("Earth"),
   Scene.root.findFirst("CountryText"),
-]).then(function ([camera, sun, earth, countriesText]) {
+  Scene.root.findFirst("CursorContainer"),
+]).then(function ([camera, sun, earth, countriesText, cursorContainer]) {
   try {
     outputSunRotationMatrix(sun);
 
@@ -54,6 +55,19 @@ Promise.all([
     // convert p world to model
     const pModel = worldToModel(p, earthWorldTransform);
     Patches.inputs.setVector("pModel", pModel);
+
+    // export rotation to get cursor looking at globe center
+    const lookAtTransform = cursorContainer.transform
+      .toSignal()
+      .lookAt(Reactive.point(0, 0, 0));
+    Patches.inputs.setVector(
+      "rModel",
+      Reactive.vector(
+        lookAtTransform.rotationX,
+        lookAtTransform.rotationY,
+        lookAtTransform.rotationZ
+      )
+    );
 
     // convert model space to uv space
     const uv = modelToTextureSpherical(pModel);
