@@ -84,22 +84,37 @@ Promise.all([
     // lookup country
     const { lon, lat } = uvToLatLon(uv);
     const listener = Reactive.monitorMany([lon, lat]);
+    let selected = Reactive.val(false);
     let selectedCountry;
+    let selectedFeature;
     listener.subscribe((event) => {
       const lon = event.newValues["0"];
       const lat = event.newValues["1"];
       // TODO: consider a tree-based optimization or checking for rational distance first
       // TODO: also consider smoothing this signal, or only caring about changes greater than x
+      if (selectedFeature) {
+        if (d3.geoContains(selectedFeature, [lon, lat])) {
+          return;
+        }
+      }
+      Patches.inputs.setBoolean("selected", false);
+      selectedCountry = "none";
+      selectedFeature = null;
       countries110m.features.forEach((feature) => {
         if (d3.geoContains(feature, [lon, lat])) {
+          selectedFeature = feature;
           selectedCountry = feature.properties.name;
         }
       });
+      selected = Reactive.val(selectedCountry !== "none");
       countriesText.text = selectedCountry;
       // Diagnostics.log(
       //   "[" + Math.round(lon) + "," + Math.round(lat) + "] " + selectedCountry
       // );
+      // Patches.inputs.setBoolean("selected", selected);
+      Patches.inputs.setBoolean("selected", selectedCountry !== "none");
     });
+    Patches.inputs.setBoolean("selected", selected);
 
     Diagnostics.log("done");
   } catch (e) {
