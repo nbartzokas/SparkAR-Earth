@@ -27,12 +27,14 @@ const countryNames = countries110m.features.map((f) => f.properties.name);
 
 // Game state
 const states = {
+  GAME_START: "GAME_START",
   ROUND_STARTING: "ROUND_STARTING",
   ROUND_STARTED: "ROUND_STARTED",
   ROUND_WIN: "ROUND_WIN",
   ROUND_TIMEOUT: "ROUND_TIMEOUT",
+  GAME_END: "GAME_END",
 };
-let state = states.ROUND_STARTING;
+let state = states.GAME_START;
 let targetCountry = null;
 
 // get directional light, calculate its rotation matrix, and return as signals
@@ -87,17 +89,29 @@ Promise.all([
     Patches.inputs.setPoint2D("uv", Reactive.pack2(uv.x, uv.y));
 
     // update loop / state machine
-    let roundStartTime = 0;
+    const gameNumRounds = 3;
     const roundTimeLimit = 20000;
+    let roundsLeft = gameNumRounds;
+    let roundStartTime = 0;
     Time.ms.interval(100).subscribe((t) => {
       switch (state) {
+        case states.GAME_START: {
+          Diagnostics.log("game starting");
+          state = states.ROUND_STARTING;
+          break;
+        }
         case states.ROUND_STARTING: {
+          if (roundsLeft === 0) {
+            state = states.GAME_END;
+            break;
+          }
           Diagnostics.log("round starting");
           // randomly select country prompt
           targetCountry =
             countryNames[Math.floor(countryNames.length * Math.random())];
           Diagnostics.log("find: " + targetCountry);
           roundStartTime = t;
+          roundsLeft--;
           state = states.ROUND_STARTED;
           break;
         }
@@ -121,6 +135,9 @@ Promise.all([
           Diagnostics.log("lose");
           // trigger new round
           state = states.ROUND_STARTING;
+          break;
+        }
+        case states.GAME_END: {
           break;
         }
         default:
