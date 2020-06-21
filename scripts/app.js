@@ -11,6 +11,7 @@ import {
   matrixTranspose,
   modelToTextureSpherical,
   raycastToSphere,
+  throttle,
   transformToForward,
   uvToLatLon,
   worldToModel,
@@ -93,7 +94,7 @@ Promise.all([
     const roundTimeLimit = 20000;
     let roundsLeft = gameNumRounds;
     let roundStartTime = 0;
-    Time.ms.interval(100).subscribe((t) => {
+    Time.ms.interval(1000).subscribe((t) => {
       switch (state) {
         case states.GAME_START: {
           Diagnostics.log("game starting");
@@ -148,10 +149,11 @@ Promise.all([
     // lookup country
     const { lon, lat } = uvToLatLon(uv);
     const listener = Reactive.monitorMany([lon, lat]);
+    const selectionThrottle = 166;
     let selected = false;
     let selectedCountry;
     let selectedFeature;
-    listener.subscribe((event) => {
+    const handleLatLonChange = throttle(function (event) {
       if (state === states.ROUND_STARTED) {
         const lon = event.newValues["0"];
         const lat = event.newValues["1"];
@@ -181,7 +183,8 @@ Promise.all([
         }
         Patches.inputs.setBoolean("selected", selected);
       }
-    });
+    }, selectionThrottle);
+    listener.subscribe(handleLatLonChange);
     Patches.inputs.setBoolean("selected", selected);
 
     Diagnostics.log("done");
