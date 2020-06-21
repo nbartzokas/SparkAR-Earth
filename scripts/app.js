@@ -1,6 +1,7 @@
 const Patches = require("Patches");
 const Reactive = require("Reactive");
 const Scene = require("Scene");
+const Time = require("Time");
 export const Diagnostics = require("Diagnostics");
 
 import * as d3 from "./d3.min.js"; // https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js
@@ -21,6 +22,18 @@ import {
 // offset along the x axis
 const BASE_MODEL_RADIUS = 0.025;
 const BASE_MODEL_TEXTURE_MAP_OFFSET_X = 0.033;
+
+const countryNames = countries110m.features.map((f) => f.properties.name);
+
+// Game state
+const states = {
+  ROUND_STARTING: "ROUND_STARTING",
+  ROUND_STARTED: "ROUND_STARTED",
+  ROUND_WIN: "ROUND_WIN",
+  ROUND_TIMEOUT: "ROUND_TIMEOUT",
+};
+let state = states.ROUND_STARTING;
+let targetCountry = null;
 
 // get directional light, calculate its rotation matrix, and return as signals
 Promise.all([
@@ -73,46 +86,84 @@ Promise.all([
     const uv = modelToTextureSpherical(pModel);
     Patches.inputs.setPoint2D("uv", Reactive.pack2(uv.x, uv.y));
 
-    // look up the color and output it
-    // TODO: do you need this?
-    // const color = Shaders.textureSampler(countriesTexture.signal, uv); // shader signal
-    // outputColorMaterial.setTextureSlot(
-    //   Shaders.DefaultMaterialTextures.DIFFUSE,
-    //   color
-    // );
+    // update loop / state machine
+    let roundStartTime = 0;
+    const roundTimeLimit = 20000;
+    Time.ms.interval(100).subscribe((t) => {
+      switch (state) {
+        case states.ROUND_STARTING: {
+          Diagnostics.log("round starting");
+          // randomly select country prompt
+          targetCountry =
+            countryNames[Math.floor(countryNames.length * Math.random())];
+          Diagnostics.log("find: " + targetCountry);
+          roundStartTime = t;
+          state = states.ROUND_STARTED;
+          break;
+        }
+        case states.ROUND_STARTED: {
+          if (t > roundStartTime + roundTimeLimit) {
+            state = states.ROUND_TIMEOUT;
+          }
+          break;
+        }
+        case states.ROUND_WIN: {
+          // stop user interaction
+          // report win
+          Diagnostics.log("win");
+          // trigger new round
+          state = states.ROUND_STARTING;
+          break;
+        }
+        case states.ROUND_TIMEOUT: {
+          // stop user interaction
+          // report loss
+          Diagnostics.log("lose");
+          // trigger new round
+          state = states.ROUND_STARTING;
+          break;
+        }
+        default:
+          break;
+      }
+    });
 
     // lookup country
     const { lon, lat } = uvToLatLon(uv);
     const listener = Reactive.monitorMany([lon, lat]);
-    let selected = Reactive.val(false);
+    let selected = false;
     let selectedCountry;
     let selectedFeature;
     listener.subscribe((event) => {
-      const lon = event.newValues["0"];
-      const lat = event.newValues["1"];
-      // TODO: consider a tree-based optimization or checking for rational distance first
-      // TODO: also consider smoothing this signal, or only caring about changes greater than x
-      if (selectedFeature) {
-        if (d3.geoContains(selectedFeature, [lon, lat])) {
-          return;
+      if (state === states.ROUND_STARTED) {
+        const lon = event.newValues["0"];
+        const lat = event.newValues["1"];
+        // TODO: consider a tree-based optimization or checking for rational distance first
+        // TODO: also consider smoothing this signal, or only caring about changes greater than x
+        if (selectedFeature) {
+          if (d3.geoContains(selectedFeature, [lon, lat])) {
+            return;
+          }
         }
+        Patches.inputs.setBoolean("selected", false);
+        selectedCountry = "none";
+        selectedFeature = null;
+        countries110m.features.forEach((feature) => {
+          if (d3.geoContains(feature, [lon, lat])) {
+            selectedFeature = feature;
+            selectedCountry = feature.properties.name;
+          }
+        });
+        selected = selectedCountry !== "none";
+        countriesText.text = selectedCountry;
+        if (
+          selectedCountry === targetCountry &&
+          state === states.ROUND_STARTED
+        ) {
+          state = states.ROUND_WIN;
+        }
+        Patches.inputs.setBoolean("selected", selected);
       }
-      Patches.inputs.setBoolean("selected", false);
-      selectedCountry = "none";
-      selectedFeature = null;
-      countries110m.features.forEach((feature) => {
-        if (d3.geoContains(feature, [lon, lat])) {
-          selectedFeature = feature;
-          selectedCountry = feature.properties.name;
-        }
-      });
-      selected = Reactive.val(selectedCountry !== "none");
-      countriesText.text = selectedCountry;
-      // Diagnostics.log(
-      //   "[" + Math.round(lon) + "," + Math.round(lat) + "] " + selectedCountry
-      // );
-      // Patches.inputs.setBoolean("selected", selected);
-      Patches.inputs.setBoolean("selected", selectedCountry !== "none");
     });
     Patches.inputs.setBoolean("selected", selected);
 
