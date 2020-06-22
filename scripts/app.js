@@ -140,7 +140,10 @@ Promise.all([
       setState(newValue);
     });
 
-    Time.ms.interval(1000).subscribe((t) => {
+    let lastTimeReported = Infinity;
+    Time.ms.interval(64).subscribe((t) => {
+      const msRemaining = roundTimeLimit - (t - roundStartTime);
+      const sRemaining = Math.floor(msRemaining / 1000);
       switch (state) {
         case states.GAME_START: {
           // At GAME_START, the node network will:
@@ -161,11 +164,19 @@ Promise.all([
           Diagnostics.log("find: " + targetCountry);
           roundStartTime = t;
           roundsLeft--;
+          lastTimeReported = Infinity;
           break;
         }
         case states.ROUND_STARTED: {
+          if (sRemaining < lastTimeReported) {
+            Diagnostics.log("time remaining: " + sRemaining);
+            lastTimeReported = sRemaining;
+          }
           if (t > roundStartTime + roundTimeLimit) {
             setState(states.ROUND_TIMEOUT);
+            Patches.inputs.setString("sRemaining", "" + 0);
+          } else {
+            Patches.inputs.setString("sRemaining", "" + sRemaining);
           }
           break;
         }
