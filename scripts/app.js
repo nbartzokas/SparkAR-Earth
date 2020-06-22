@@ -184,7 +184,7 @@ Promise.all([
           // stop user interaction
           // report win
           // trigger new round with delay
-          setState(states.ROUND_STARTING, 1500);
+          setState(states.ROUND_STARTING, 2000);
           break;
         }
         case states.ROUND_TIMEOUT: {
