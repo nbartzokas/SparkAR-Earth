@@ -98,52 +98,71 @@ Promise.all([
     const roundTimeLimit = 20000;
     let roundsLeft = gameNumRounds;
     let roundStartTime = 0;
+
+    let oldState;
+    let newState;
+    function setState(_newState, timeout = 0) {
+      if (newState === _newState) {
+        // already setting this state with timeout
+        return;
+      }
+      if (oldState === _newState) {
+        // already set as this state
+        return;
+      }
+      newState = _newState;
+      Time.setTimeout(() => {
+        state = newState;
+        Patches.inputs.setString("state", state);
+        Diagnostics.log("state set to: " + state);
+        oldState = state;
+      }, timeout);
+    }
+
     Time.ms.interval(1000).subscribe((t) => {
       switch (state) {
         case states.GAME_START: {
-          Diagnostics.log("game starting");
           // show TitlePane, hide others
           //   show Title, hide others
           //   show Instruction0
           //   show Instruction1
-          state = states.ROUND_STARTING;
+          // then...
+          setState(states.ROUND_STARTING);
           break;
         }
         case states.ROUND_STARTING: {
           if (roundsLeft === 0) {
-            state = states.GAME_END;
+            setState(states.GAME_END);
             break;
           }
-          Diagnostics.log("round starting");
+          setState(states.ROUND_STARTED);
           // randomly select country prompt
           targetCountry =
             countryNames[Math.floor(countryNames.length * Math.random())];
+          Patches.inputs.setString("targetCountry", targetCountry);
           Diagnostics.log("find: " + targetCountry);
           roundStartTime = t;
           roundsLeft--;
-          state = states.ROUND_STARTED;
           break;
         }
         case states.ROUND_STARTED: {
           if (t > roundStartTime + roundTimeLimit) {
-            state = states.ROUND_TIMEOUT;
+            setState(states.ROUND_TIMEOUT);
           }
           break;
         }
         case states.ROUND_WIN: {
           // stop user interaction
           // report win
-          Diagnostics.log("win");
-          // trigger new round
-          state = states.ROUND_STARTING;
+          // trigger new round with delay
+          setState(states.ROUND_STARTING, 1500);
           break;
         }
         case states.ROUND_TIMEOUT: {
           // stop user interaction
           // report loss
-          Diagnostics.log("lose");
           // trigger new round
-          state = states.ROUND_STARTING;
+          setState(states.ROUND_STARTING, 2000);
           break;
         }
         case states.GAME_END: {
@@ -153,6 +172,7 @@ Promise.all([
           break;
       }
     });
+    Patches.inputs.setString("state", state);
 
     // lookup country
     const { lon, lat } = uvToLatLon(uv);
@@ -170,7 +190,7 @@ Promise.all([
           state === states.ROUND_STARTED &&
           d3.geoContains(countriesByName[targetCountry], [lon, lat])
         ) {
-          state = states.ROUND_WIN;
+          setState(states.ROUND_WIN);
         }
 
         // // TODO: consider a tree-based optimization or checking for rational distance first
