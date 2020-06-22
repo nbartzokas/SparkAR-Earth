@@ -39,6 +39,7 @@ const states = {
   ROUND_TIMEOUT: "ROUND_TIMEOUT",
   GAME_END: "GAME_END",
 };
+const statesValues = Object.values(states);
 let state = states.GAME_START;
 let targetCountry = null;
 
@@ -49,7 +50,15 @@ Promise.all([
   Scene.root.findFirst("Earth"),
   Scene.root.findFirst("CountryText"),
   Scene.root.findFirst("CursorContainer"),
-]).then(function ([camera, sun, earth, countriesText, cursorContainer]) {
+  Patches.outputs.getString("stateRequest"),
+]).then(function ([
+  camera,
+  sun,
+  earth,
+  countriesText,
+  cursorContainer,
+  stateRequest,
+]) {
   try {
     outputSunRotationMatrix(sun);
 
@@ -101,7 +110,12 @@ Promise.all([
 
     let oldState;
     let newState;
+
     function setState(_newState, timeout = 0) {
+      if (statesValues.indexOf(_newState) === -1) {
+        Diagnostics.log("Invalid state " + _newState);
+        return;
+      }
       if (newState === _newState) {
         // already setting this state with timeout
         return;
@@ -119,15 +133,19 @@ Promise.all([
       }, timeout);
     }
 
+    stateRequest.monitor().subscribe(({ oldValue, newValue }) => {
+      Diagnostics.log(
+        "Received state request. old:" + oldValue + " new:" + newValue
+      );
+      setState(newValue);
+    });
+
     Time.ms.interval(1000).subscribe((t) => {
       switch (state) {
         case states.GAME_START: {
-          // show TitlePane, hide others
-          //   show Title, hide others
-          //   show Instruction0
-          //   show Instruction1
-          // then...
-          setState(states.ROUND_STARTING);
+          // At GAME_START, the node network will:
+          // * show Title and instructions
+          // * request state of ROUND_STARTING
           break;
         }
         case states.ROUND_STARTING: {
