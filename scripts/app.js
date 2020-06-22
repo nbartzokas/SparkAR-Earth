@@ -24,6 +24,10 @@ import {
 const BASE_MODEL_RADIUS = 0.025;
 const BASE_MODEL_TEXTURE_MAP_OFFSET_X = 0.033;
 
+const countriesByName = countries110m.features.reduce(
+  (a, c) => Object.assign(a, { [c.properties.name]: c }),
+  {}
+);
 const countryNames = countries110m.features.map((f) => f.properties.name);
 
 // Game state
@@ -98,6 +102,10 @@ Promise.all([
       switch (state) {
         case states.GAME_START: {
           Diagnostics.log("game starting");
+          // show TitlePane, hide others
+          //   show Title, hide others
+          //   show Instruction0
+          //   show Instruction1
           state = states.ROUND_STARTING;
           break;
         }
@@ -150,38 +158,46 @@ Promise.all([
     const { lon, lat } = uvToLatLon(uv);
     const listener = Reactive.monitorMany([lon, lat]);
     const selectionThrottle = 166;
-    let selected = false;
+    let selected = true; // TODO: stopping usage of this flag for now
     let selectedCountry;
     let selectedFeature;
     const handleLatLonChange = throttle(function (event) {
       if (state === states.ROUND_STARTED) {
         const lon = event.newValues["0"];
         const lat = event.newValues["1"];
-        // TODO: consider a tree-based optimization or checking for rational distance first
-        // TODO: also consider smoothing this signal, or only caring about changes greater than x
-        if (selectedFeature) {
-          if (d3.geoContains(selectedFeature, [lon, lat])) {
-            return;
-          }
-        }
-        Patches.inputs.setBoolean("selected", false);
-        selectedCountry = "none";
-        selectedFeature = null;
-        countries110m.features.forEach((feature) => {
-          if (d3.geoContains(feature, [lon, lat])) {
-            selectedFeature = feature;
-            selectedCountry = feature.properties.name;
-          }
-        });
-        selected = selectedCountry !== "none";
-        countriesText.text = selectedCountry;
+
         if (
-          selectedCountry === targetCountry &&
-          state === states.ROUND_STARTED
+          state === states.ROUND_STARTED &&
+          d3.geoContains(countriesByName[targetCountry], [lon, lat])
         ) {
           state = states.ROUND_WIN;
         }
-        Patches.inputs.setBoolean("selected", selected);
+
+        // // TODO: consider a tree-based optimization or checking for rational distance first
+        // // TODO: also consider smoothing this signal, or only caring about changes greater than x
+        // if (selectedFeature) {
+        //   if (d3.geoContains(selectedFeature, [lon, lat])) {
+        //     return;
+        //   }
+        // }
+        // Patches.inputs.setBoolean("selected", false);
+        // selectedCountry = "none";
+        // selectedFeature = null;
+        // countries110m.features.forEach((feature) => {
+        //   if (d3.geoContains(feature, [lon, lat])) {
+        //     selectedFeature = feature;
+        //     selectedCountry = feature.properties.name;
+        //   }
+        // });
+        // selected = selectedCountry !== "none";
+        // countriesText.text = selectedCountry;
+        // if (
+        //   selectedCountry === targetCountry &&
+        //   state === states.ROUND_STARTED
+        // ) {
+        //   state = states.ROUND_WIN;
+        // }
+        // Patches.inputs.setBoolean("selected", selected);
       }
     }, selectionThrottle);
     listener.subscribe(handleLatLonChange);

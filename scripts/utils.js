@@ -1,4 +1,5 @@
 const Reactive = require("Reactive");
+const Time = require("Time");
 
 /**
  * Convert texture coordinates to latitude and longitude
@@ -289,14 +290,14 @@ export function throttle(func, wait, options) {
     args = arguments;
     if (remaining <= 0 || remaining > wait) {
       if (timeout) {
-        clearTimeout(timeout);
+        Time.clearTimeout(timeout);
         timeout = null;
       }
       previous = now;
       result = func.apply(context, args);
       if (!timeout) context = args = null;
     } else if (!timeout && options.trailing !== false) {
-      timeout = setTimeout(later, remaining);
+      timeout = Time.setTimeout(later, remaining);
     }
     return result;
   };
