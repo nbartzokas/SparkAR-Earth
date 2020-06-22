@@ -30,33 +30,52 @@ In this game you're given a timed challenge to find countries in the world. A re
 
 ## How I built it
 
-I'm also a big fan of using NASA's beautiful imagery of the world. They provide
+The Earth is rendered with real NASA data, a day and night side, reflective oceans, drifting clouds, and an atmosphere.
 
-The game
-Renders NASA based Earth
-Renders data sourced from d3
+I started off by watching the [tutorial by Blender Guru](https://www.youtube.com/watch?v=9Q8PwcDzb8Y) on making a realistic planet Earth in Blender. It used a different technology, but there were principles I could use when building my Earth in Spark AR.
 
-NASA data is beautiful
-Blender Guru tutorial https://www.youtube.com/watch?v=9Q8PwcDzb8Y
+For Earth's texture, I used imagery from NASA's [Visible Earth](https://visibleearth.nasa.gov/) and [Science Visualization Studio](https://svs.gsfc.nasa.gov/index.html) projects. They provide high resolution images of the Earth in the correct projection, equirectangular. I downloaded images for [daytime](https://visibleearth.nasa.gov/collection/1484/blue-marble), [nighttime](https://visibleearth.nasa.gov/collection/1595/earth-at-night), [clouds](https://visibleearth.nasa.gov/images/57747/blue-marble-clouds), [topography](https://visibleearth.nasa.gov/images/73934/topography), and a black and white [land/sea mask](https://svs.gsfc.nasa.gov/3487).
+
+I used my favorite commandline image swiss-army-knife, [ImageMagick](https://imagemagick.org/index.php), to preprocess these images, altering their size and color channels as needed. I also converted NASA's height map into a normal map using the open source tool [NormalMap-Online](https://cpetry.github.io/NormalMap-Online/).
+
+I used D3 and topojson to detect which country was selected...
+
+```
+...
+```
 
 ## Challenges I ran into
 
-didn't have a countries object, so used a texture
-how to freeze a signal value
+### Country Selection Highlighting
+
+I wanted to challenge the player to find countries without all their borders being visible. Instead I wanted to show the player just one country at a time as they scrubbed their cursor over the surface of the globe. I didn't have 3D geometry for all of the borders of the countries, and those I found online had too many polygons. I decided to try using a texture. I used D3 to generate a texture in which every country had a unique color. I then figured out a clever trick to mask out all but a single country from this map. Let's say I wanted to highlight just the country colored red, (1,0,0). I put the entire map through a shader that finds each fragment color's distance from red. All countries will have a non-zero distance except the red one. Now if I subtract that value from 1, all country's values are less than one, other than the red one. Finally, I can raise that value to a high exponent and all the other country's values will drop near zero, except the red one. From there I just alter and have my highlight.
+
+### Pausing a Signal
+
+As a player is highlighting countries, searching for the correct one, the camera orientation signal is ultimately driving the position of the cursor and the country that is highlighted. When the player hits the right country, I wanted to pause the selection of that country to allow time for the correct answer to register. This was challenging because I knew of no way to pause a signal. Luckily, I came up with a solution using the "Offset" patch. Since this patch measures the difference between the current signal and the signal's value the last time the patch was reset, I was able to use this difference to calculate the signal from the past. I suspect I could have used signal histories to achieve the same effect, but at the time of this project, their documentation was a broken link.
 
 ## Accomplishments that I'm proud of
 
-the earth
+I'm really happy with how the Earth came out. It has about as much detail, animation, and realism as I could pack into an AR application. In particular, I'm proud of solving the problems of lighting and atmosphere.
+
+To light the Earth realistically, I used NASA's separate day and night textures. I supply the position of the "Sun" directional light in the scene as input to the Earth's surface shader. I then use it to transition from day to night in a realistic way.
+
+Another feature that worked well was the atmosphere. I created a Fresnel shader out of patches and use it to create a blue haze that hugs the edges of the earth and thickens as you look through the atmosphere at a lower angle.
+
+```
+record gif of spinning the sun?
+```
 
 ## What I learned
 
 Through completing this project I learned more about:
 
 - Advanced 3D rendering techniques in Spark AR
-- Patches, Reactive programming, and how to bridge the two
-- Organization, algorithms, and game design patterns in Spark AR Studio
+- Algorithms and patterns in Patches and Reactive programming
+- Organization and re-use with Groups and Patch Assets
+- Bridging Patches and Scripts
 - Incorporating 3rd party libraries like d3.js
-- 2D UI animation techniques
+- Animating UVs and 2D UI elements
 - Effective debugging in Spark AR
 
 ## What's next?
