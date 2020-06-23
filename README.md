@@ -52,7 +52,7 @@ I wanted to challenge the player to find countries without all their borders bei
 
 ### Pausing a Signal
 
-As a player is highlighting countries, searching for the correct one, the camera orientation signal is ultimately driving the position of the cursor and the country that is highlighted. When the player hits the right country, I wanted to pause the selection of that country to allow time for the correct answer to register. This was challenging because I knew of no way to pause a signal. Luckily, I came up with a solution using the "Offset" patch. Since this patch measures the difference between the current signal and the signal's value the last time the patch was reset, I was able to use this difference to calculate the signal from the past. I suspect I could have used signal histories to achieve the same effect, but at the time of this project, their documentation was a broken link.
+As a player is highlighting countries, searching for the correct one, the camera orientation signal is ultimately driving the position of the cursor and the country that is highlighted. When the player hits the right country, I wanted to pause the selection of that country to allow time for the correct answer to register. This was challenging because I knew of no way to pause a signal. Luckily, I came up with a solution using the "Offset" patch. Since this patch measures the difference between the current signal and the signal's value the last time the patch was reset, I was able to use this difference to calculate the signal from the past. I suspect I could have used signal histories or signal recorders to achieve the same effect.
 
 ## Accomplishments that I'm proud of
 

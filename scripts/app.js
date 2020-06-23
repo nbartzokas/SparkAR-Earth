@@ -103,6 +103,7 @@ Promise.all([
     Patches.inputs.setPoint2D("uv", Reactive.pack2(uv.x, uv.y));
 
     // update loop / state machine
+
     const gameNumRounds = 3;
     const roundTimeLimit = 20000;
     let roundsLeft = gameNumRounds;
@@ -140,6 +141,9 @@ Promise.all([
       setState(newValue);
     });
 
+    let nCorrect = 0;
+    let nIncorrect = 0;
+
     let lastTimeReported = Infinity;
     Time.ms.interval(64).subscribe((t) => {
       const msRemaining = roundTimeLimit - (t - roundStartTime);
@@ -149,6 +153,8 @@ Promise.all([
           // At GAME_START, the node network will:
           // * show Title and instructions
           // * request state of ROUND_STARTING
+          nCorrect = 0;
+          nIncorrect = 0;
           break;
         }
         case states.ROUND_STARTING: {
@@ -184,6 +190,7 @@ Promise.all([
           // stop user interaction
           // report win
           // trigger new round with delay
+          nCorrect++;
           setState(states.ROUND_STARTING, 2000);
           break;
         }
@@ -191,6 +198,7 @@ Promise.all([
           // stop user interaction
           // report loss
           // trigger new round
+          nIncorrect++;
           setState(states.ROUND_STARTING, 2000);
           break;
         }
