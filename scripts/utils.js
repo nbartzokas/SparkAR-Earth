@@ -211,53 +211,6 @@ export function raycastToSphere(center, radius, origin, direction) {
 }
 
 /**
- * Swizzle the input value
- * Source: https://github.com/jonathanhooker/SparkThreePBR/blob/47e2af94ee3983a4353aa07c684534288ddf135b/scripts/threeShader.js#L54
- * @param {Object} obj point or vector signal
- * @param {String} str swizzle pattern
- * @returns {Object|Number} result
- */
-export function swizzle(obj, str) {
-  const getVar = function (char) {
-    switch (char) {
-      case "r":
-      case "x":
-        return obj.x;
-      case "g":
-      case "y":
-        return obj.y;
-      case "b":
-      case "z":
-        return obj.z;
-      case "a":
-      case "w":
-        return obj.w;
-      case "1":
-        return 1;
-      case "0":
-      default:
-        return 0;
-    }
-  };
-  const vars = [];
-  for (let i = 0; i < str.length; i++) {
-    vars.push(getVar(str[i]));
-  }
-  if (str.length === 2) {
-    return Reactive.pack2(getVar(str[0]), getVar(str[1]));
-  } else if (str.length === 3) {
-    return Reactive.pack3(getVar(str[0]), getVar(str[1]), getVar(str[2]));
-  } else {
-    return Reactive.pack4(
-      getVar(str[0]),
-      getVar(str[1]),
-      getVar(str[2]),
-      getVar(str[3])
-    );
-  }
-}
-
-/**
  * Returns a function, that, when invoked, will only be triggered at most once
  * during a given window of time. Normally, the throttled function will run
  * as much as it can, without ever going more than once per `wait` duration;

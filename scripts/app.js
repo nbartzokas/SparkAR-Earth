@@ -24,6 +24,8 @@ import {
 const BASE_MODEL_RADIUS = 0.025;
 const BASE_MODEL_TEXTURE_MAP_OFFSET_X = 0.033;
 
+const SELECTED_NONE_TEXT = "...";
+
 const countriesByName = countries110m.features.reduce(
   (a, c) => Object.assign(a, { [c.properties.name]: c }),
   {}
@@ -38,6 +40,7 @@ const states = {
   ROUND_WIN: "ROUND_WIN",
   ROUND_TIMEOUT: "ROUND_TIMEOUT",
   GAME_END: "GAME_END",
+  EXPLORE: "EXPLORE",
 };
 const statesValues = Object.values(states);
 let state = states.GAME_START;
@@ -50,6 +53,8 @@ Promise.all([
   Scene.root.findFirst("Earth"),
   Scene.root.findFirst("CountryText"),
   Scene.root.findFirst("CursorContainer"),
+  Scene.root.findFirst("GameOverText"),
+  Scene.root.findFirst("ExploreCountryText"),
   Patches.outputs.getString("stateRequest"),
 ]).then(function ([
   camera,
@@ -57,6 +62,8 @@ Promise.all([
   earth,
   countriesText,
   cursorContainer,
+  gameOverText,
+  exploreCountryText,
   stateRequest,
 ]) {
   try {
@@ -104,9 +111,11 @@ Promise.all([
 
     // update loop / state machine
 
-    const gameNumRounds = 3;
+    const nTotal = 3;
+    Patches.inputs.setScalar("nTotal", nTotal);
+
     const roundTimeLimit = 20000;
-    let roundsLeft = gameNumRounds;
+    let roundsLeft = nTotal;
     let roundStartTime = 0;
 
     let oldState;
@@ -142,7 +151,7 @@ Promise.all([
     });
 
     let nCorrect = 0;
-    let nIncorrect = 0;
+    Patches.inputs.setScalar("nCorrect", nCorrect);
 
     let lastTimeReported = Infinity;
     Time.ms.interval(64).subscribe((t) => {
@@ -153,8 +162,9 @@ Promise.all([
           // At GAME_START, the node network will:
           // * show Title and instructions
           // * request state of ROUND_STARTING
+          roundsLeft = nTotal;
           nCorrect = 0;
-          nIncorrect = 0;
+          Patches.inputs.setScalar("nCorrect", nCorrect);
           break;
         }
         case states.ROUND_STARTING: {
@@ -190,7 +200,6 @@ Promise.all([
           // stop user interaction
           // report win
           // trigger new round with delay
-          nCorrect++;
           setState(states.ROUND_STARTING, 2000);
           break;
         }
@@ -198,11 +207,20 @@ Promise.all([
           // stop user interaction
           // report loss
           // trigger new round
-          nIncorrect++;
           setState(states.ROUND_STARTING, 2000);
           break;
         }
         case states.GAME_END: {
+          if (nCorrect === nTotal) {
+            gameOverText.text = `Wow! Great job!\nYou got them all!`;
+          } else if (nCorrect === 0) {
+            gameOverText.text = `Oops! You found none.\nBetter luck next time!`;
+          } else {
+            gameOverText.text = `You found ${nCorrect} out of ${nTotal}!\nThink you can get\na perfect score?`;
+          }
+          break;
+        }
+        case states.EXPLORE: {
           break;
         }
         default:
@@ -216,45 +234,41 @@ Promise.all([
     const listener = Reactive.monitorMany([lon, lat]);
     const selectionThrottle = 166;
     let selected = true; // TODO: stopping usage of this flag for now
-    let selectedCountry;
-    let selectedFeature;
+    let selectedCountry = SELECTED_NONE_TEXT;
+    let selectedFeature = null;
     const handleLatLonChange = throttle(function (event) {
+      const lonVal = event.newValues["0"];
+      const latVal = event.newValues["1"];
       if (state === states.ROUND_STARTED) {
-        const lon = event.newValues["0"];
-        const lat = event.newValues["1"];
-
         if (
           state === states.ROUND_STARTED &&
-          d3.geoContains(countriesByName[targetCountry], [lon, lat])
+          d3.geoContains(countriesByName[targetCountry], [lonVal, latVal])
         ) {
+          nCorrect++;
+          Patches.inputs.setScalar("nCorrect", nCorrect);
           setState(states.ROUND_WIN);
         }
-
-        // // TODO: consider a tree-based optimization or checking for rational distance first
-        // // TODO: also consider smoothing this signal, or only caring about changes greater than x
-        // if (selectedFeature) {
-        //   if (d3.geoContains(selectedFeature, [lon, lat])) {
-        //     return;
-        //   }
-        // }
-        // Patches.inputs.setBoolean("selected", false);
-        // selectedCountry = "none";
-        // selectedFeature = null;
-        // countries110m.features.forEach((feature) => {
-        //   if (d3.geoContains(feature, [lon, lat])) {
-        //     selectedFeature = feature;
-        //     selectedCountry = feature.properties.name;
-        //   }
-        // });
-        // selected = selectedCountry !== "none";
-        // countriesText.text = selectedCountry;
-        // if (
-        //   selectedCountry === targetCountry &&
-        //   state === states.ROUND_STARTED
-        // ) {
-        //   state = states.ROUND_WIN;
-        // }
-        // Patches.inputs.setBoolean("selected", selected);
+      }
+      if (state === states.EXPLORE) {
+        // TODO: consider a tree-based optimization or checking for rational distance first
+        // TODO: also consider smoothing this signal, or only caring about changes greater than x
+        if (selectedFeature) {
+          if (d3.geoContains(selectedFeature, [lonVal, latVal])) {
+            return;
+          }
+        }
+        selectedCountry = SELECTED_NONE_TEXT;
+        selectedFeature = null;
+        countries110m.features.forEach((feature) => {
+          if (d3.geoContains(feature, [lonVal, latVal])) {
+            selectedFeature = feature;
+            selectedCountry = feature.properties.name;
+          }
+        });
+        selected = selectedCountry !== SELECTED_NONE_TEXT;
+        exploreCountryText.text = selectedCountry;
+        Patches.inputs.setBoolean("selected", selected);
+        // Diagnostics.log(selectedCountry);
       }
     }, selectionThrottle);
     listener.subscribe(handleLatLonChange);

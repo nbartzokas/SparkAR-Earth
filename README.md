@@ -22,11 +22,7 @@ I'm inspired by games that teach through gameplay. There are some fun, simple ge
 
 ## What it does
 
-In this game you're given a timed challenge to find countries in the world. A realistic planet Earth hovers above the floor in front of you. As you move around it, aiming your camera at its surface, countries light up below your cursor.
-
-```
-...
-```
+In this game you're given a timed challenge to find countries in the world. A realistic planet Earth hovers above the floor in front of you. As you move around it, aiming your camera at its surface, countries light up below your cursor. When you hit the correct country, you get a point. If the time runs out, you miss out. After a round, you're given some free time to explore and study the globe before you tap to play again!
 
 ## How I built it
 
