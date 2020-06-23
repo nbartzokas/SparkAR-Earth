@@ -44,7 +44,7 @@ const states = {
   EXPLORE: "EXPLORE",
 };
 const statesValues = Object.values(states);
-let state = states.EXPLORE;
+let state = states.GAME_START;
 let targetCountry = null;
 
 // get directional light, calculate its rotation matrix, and return as signals
