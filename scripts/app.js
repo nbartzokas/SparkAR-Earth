@@ -1,3 +1,4 @@
+const Animation = require("Animation");
 const Patches = require("Patches");
 const Reactive = require("Reactive");
 const Scene = require("Scene");
@@ -43,7 +44,7 @@ const states = {
   EXPLORE: "EXPLORE",
 };
 const statesValues = Object.values(states);
-let state = states.GAME_START;
+let state = states.EXPLORE;
 let targetCountry = null;
 
 // get directional light, calculate its rotation matrix, and return as signals
@@ -55,6 +56,9 @@ Promise.all([
   Scene.root.findFirst("CursorContainer"),
   Scene.root.findFirst("GameOverText"),
   Scene.root.findFirst("ExploreCountryText"),
+  Scene.root.findFirst("FireworkRed"),
+  Scene.root.findFirst("FireworkGreen"),
+  Scene.root.findFirst("FireworkBlue"),
   Patches.outputs.getString("stateRequest"),
 ]).then(function ([
   camera,
@@ -64,9 +68,30 @@ Promise.all([
   cursorContainer,
   gameOverText,
   exploreCountryText,
+  fireworkRed,
+  fireworkGreen,
+  fireworkBlue,
   stateRequest,
 ]) {
   try {
+    const colorArray = Animation.samplers.easeInCubic(
+      [1, 1, 1, 1],
+      [1, 1, 1, 0]
+    );
+    const colorSampler = Animation.samplers.HSVA(colorArray);
+    fireworkRed.colorModulationHSVA = Reactive.HSVA(0, 1, 1, 1);
+    fireworkRed.colorModulationHSVADelta = Reactive.HSVA(0.1, 0, 0, 0);
+    fireworkRed.hsvaColorModulationModifier = colorSampler;
+    fireworkGreen.colorModulationHSVA = Reactive.HSVA(0.33, 1, 1, 1);
+    fireworkGreen.colorModulationHSVADelta = Reactive.HSVA(0.1, 0, 0, 0);
+    fireworkGreen.hsvaColorModulationModifier = colorSampler;
+    fireworkBlue.colorModulationHSVA = Reactive.HSVA(0.67, 1, 1, 1);
+    fireworkBlue.colorModulationHSVADelta = Reactive.HSVA(0.1, 0, 0, 0);
+    fireworkBlue.hsvaColorModulationModifier = colorSampler;
+
+    // scale shrink over time
+    //
+
     outputSunRotationMatrix(sun);
 
     // Get Camera origin, direction
@@ -185,7 +210,7 @@ Promise.all([
         }
         case states.ROUND_STARTED: {
           if (sRemaining < lastTimeReported) {
-            Diagnostics.log("time remaining: " + sRemaining);
+            // Diagnostics.log("time remaining: " + sRemaining);
             lastTimeReported = sRemaining;
           }
           if (t > roundStartTime + roundTimeLimit) {
