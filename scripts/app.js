@@ -139,7 +139,8 @@ Promise.all([
     const nTotal = 3;
     Patches.inputs.setScalar("nTotal", nTotal);
 
-    const roundTimeLimit = 20000;
+    const roundTimeLimits = [1, 5000, 10000, 15000];
+    let roundTimeLimit = 1;
     let roundsLeft = nTotal;
     let roundStartTime = 0;
 
@@ -209,6 +210,7 @@ Promise.all([
           Patches.inputs.setString("targetCountry", targetCountry);
           Diagnostics.log("find: " + targetCountry);
           roundStartTime = t;
+          roundTimeLimit = roundTimeLimits[roundsLeft];
           roundsLeft--;
           lastTimeReported = Infinity;
           break;
@@ -230,6 +232,7 @@ Promise.all([
           // stop user interaction
           // report win
           // trigger new round with delay
+          Patches.inputs.setString("sRemaining", "" + 0);
           setState(states.ROUND_STARTING, 2000);
           break;
         }
