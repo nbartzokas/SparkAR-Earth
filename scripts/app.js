@@ -160,12 +160,17 @@ Promise.all([
         return;
       }
       newState = _newState;
-      Time.setTimeout(() => {
+      const _setState = () => {
         state = newState;
         Patches.inputs.setString("state", state);
         Diagnostics.log("state set to: " + state);
         oldState = state;
-      }, timeout);
+      };
+      if (timeout === 0) {
+        _setState();
+      } else {
+        Time.setTimeout(_setState, timeout);
+      }
     }
 
     stateRequest.monitor().subscribe(({ oldValue, newValue }) => {
