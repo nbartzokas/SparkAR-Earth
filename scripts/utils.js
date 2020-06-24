@@ -149,7 +149,7 @@ export function matrixTranspose(m) {
 /**
  * Solve quadratic equation given a, b, and c
  * returning the lesser non-negative result
- * or -1 if none
+ * or 0 if none
  * @param {ScalarSignal} a
  * @param {ScalarSignal} b
  * @param {ScalarSignal} c
@@ -165,14 +165,14 @@ export function solveQuadratic(a, b, c) {
 
   const x0 = discr
     .lt(0)
-    .ifThenElse(-1, discr.eq(0).ifThenElse(b.mul(-0.5).div(a), q.div(a)));
+    .ifThenElse(0, discr.eq(0).ifThenElse(b.mul(-0.5).div(a), q.div(a)));
 
   const x1 = discr
     .lt(0)
-    .ifThenElse(-1, discr.eq(0).ifThenElse(b.mul(-0.5).div(a), c.div(q)));
+    .ifThenElse(0, discr.eq(0).ifThenElse(b.mul(-0.5).div(a), c.div(q)));
 
   return Reactive.and(x0.lt(0), x1.lt(0)).ifThenElse(
-    -1,
+    0,
     x1
       .lt(0)
       .ifThenElse(x0, x0.lt(0).ifThenElse(x1, x0.lt(x1).ifThenElse(x0, x1)))

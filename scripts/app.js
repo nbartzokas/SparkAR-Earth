@@ -113,6 +113,13 @@ Promise.all([
     );
     Patches.inputs.setVector("pWorld", Reactive.vector(p.x, p.y, p.z));
 
+    const offEarth = Reactive.andList([
+      p.x.eq(cameraOrigin.x),
+      p.y.eq(cameraOrigin.y),
+      p.z.eq(cameraOrigin.z),
+    ]);
+    Diagnostics.watch("offEarth", offEarth);
+
     // convert p world to model
     const pModel = worldToModel(p, earthWorldTransform);
     Patches.inputs.setVector("pModel", pModel);
@@ -272,6 +279,13 @@ Promise.all([
     const handleLatLonChange = throttle(function (event) {
       const lonVal = event.newValues["0"];
       const latVal = event.newValues["1"];
+      if (offEarth.pinLastValue()) {
+        selectedCountry = SELECTED_NONE_TEXT;
+        selectedFeature = null;
+        exploreCountryText.text = selectedCountry;
+        Patches.inputs.setBoolean("selected", false);
+        return;
+      }
       if (state === states.ROUND_STARTED) {
         if (
           state === states.ROUND_STARTED &&
@@ -283,8 +297,7 @@ Promise.all([
         }
       }
       if (state === states.EXPLORE) {
-        // TODO: consider a tree-based optimization or checking for rational distance first
-        // TODO: also consider smoothing this signal, or only caring about changes greater than x
+        // TODO: consider a quadtree-based optimization or checking for rational distance first
         if (selectedFeature) {
           if (d3.geoContains(selectedFeature, [lonVal, latVal])) {
             return;
