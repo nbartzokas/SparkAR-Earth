@@ -139,7 +139,7 @@ Promise.all([
     const nTotal = 3;
     Patches.inputs.setScalar("nTotal", nTotal);
 
-    const roundTimeLimits = [1, 5000, 10000, 15000];
+    const roundTimeLimits = [1, 10000, 15000, 20000];
     let roundTimeLimit = 1;
     let roundsLeft = nTotal;
     let roundStartTime = 0;
