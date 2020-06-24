@@ -13,6 +13,7 @@ Technologies: [Spark AR Studio](https://sparkar.facebook.com/ar-studio/), [d3.js
 ![Gallery Image 1](./readme/your-world-screenshot-01.jpg)
 ![Gallery Image 2](./readme/your-world-screenshot-02.jpg)
 ![Gallery Image 3](./readme/your-world-screenshot-03.jpg)
+![Fireworks Gif](./readme/your-world-fireworks.gif)
 
 ## Inspiration
 
