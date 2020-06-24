@@ -128,7 +128,7 @@ Promise.all([
       p.y.eq(cameraOrigin.y),
       p.z.eq(cameraOrigin.z),
     ]);
-    Diagnostics.watch("offEarth", offEarth);
+    Patches.inputs.setBoolean("offEarth", offEarth);
 
     // convert p world to model
     const pModel = worldToModel(p, earthWorldTransform);
