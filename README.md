@@ -1,50 +1,42 @@
 # How Well Do You Know Your World
 
-```
-THUMBNAIL IMAGE
-```
+![Thumbnail Image](./readme/your-world-screenshot-thumbnail.jpg)
 
 The world is your game board! Run around a beautifully rendered planet Earth. Aim at countries you're challenged to identify. Do it all before the clock runs out to prove how well you know your world!
 
-Try it out: [LINK]()
+Try it out: [Facebook Test Link](https://www.facebook.com/fbcameraeffects/testit/2883742358415652/MDNhMjI5NDBmYjY3Yzg3OTFmMTM0MmQ1NmE1NTI2N2M=/), [Instagram Test Link](https://www.instagram.com/ar/281024803243917/?ch=MWQ5ZDA5MTBkMGJjMGE1MzA5ZjNjY2RiZjU0MDEzMGU%3D)
 
-Video DEMO: [LINK OR EMBED]()
+Watch gameplay: [Video Demo](https://youtu.be/0jRid44iga8)
 
 Technologies: [Spark AR Studio](https://sparkar.facebook.com/ar-studio/), [d3.js](https://d3js.org/)
 
-```
-IMAGE GALLERY
-```
+![Gallery Image 1](./readme/your-world-screenshot-01.jpg)
+![Gallery Image 2](./readme/your-world-screenshot-02.jpg)
+![Gallery Image 3](./readme/your-world-screenshot-03.jpg)
 
 ## Inspiration
 
-I'm inspired by games that teach through gameplay. There are some fun, simple geography games out there. I like to challenge myself with them from time to time. It's so easy to forget where a country is when you aren't exposed to it's name very often. And when you forget where a country is, you lose so much context since the bordering countries are culturally related. Geography is a foundational knowledge that helps build a better understanding of our diverse world.
+Geography is a foundational knowledge that helps build a better understanding of our diverse world. Too often we forget where a country is when we aren't exposed to it frequently. And when we forget where a country is, we lose its context. A country's neighbors are culturally related, after all. Games can teach geography through play. This project experiments with this kind of play in Augmented Reality.
 
 ## What it does
 
-In this game you're given a timed challenge to find countries in the world. A realistic planet Earth hovers above the floor in front of you. As you move around it, aiming your camera at its surface, countries light up below your cursor. When you hit the correct country, you get a point. If the time runs out, you miss out. After a round, you're given some free time to explore and study the globe before you tap to play again!
+In this game you're given a timed challenge to find countries in the world. Planet Earth hovers above the floor in front of you. As you move around it, aiming your camera at its surface, countries light up below a cursor. You must point at each country you're challenged to identify before time runs out. If you get them all, you're treated to fireworks. If you miss any, don't worry. After a round, you're given some free time to explore and study the globe before you tap to play again!
 
 ## How I built it
 
-The Earth is rendered with real NASA data, a day and night side, reflective oceans, drifting clouds, and an atmosphere.
+The Earth that serves as your gameboard is rendered with real NASA data, a day and night side, reflective oceans, drifting clouds, and an atmosphere.
 
 I started off by watching the [tutorial by Blender Guru](https://www.youtube.com/watch?v=9Q8PwcDzb8Y) on making a realistic planet Earth in Blender. It used a different technology, but there were principles I could use when building my Earth in Spark AR.
 
 For Earth's texture, I used imagery from NASA's [Visible Earth](https://visibleearth.nasa.gov/) and [Science Visualization Studio](https://svs.gsfc.nasa.gov/index.html) projects. They provide high resolution images of the Earth in the correct projection, equirectangular. I downloaded images for [daytime](https://visibleearth.nasa.gov/collection/1484/blue-marble), [nighttime](https://visibleearth.nasa.gov/collection/1595/earth-at-night), [clouds](https://visibleearth.nasa.gov/images/57747/blue-marble-clouds), [topography](https://visibleearth.nasa.gov/images/73934/topography), and a black and white [land/sea mask](https://svs.gsfc.nasa.gov/3487).
 
-I used my favorite commandline image swiss-army-knife, [ImageMagick](https://imagemagick.org/index.php), to preprocess these images, altering their size and color channels as needed. I also converted NASA's height map into a normal map using the open source tool [NormalMap-Online](https://cpetry.github.io/NormalMap-Online/).
-
-I used D3 and topojson to detect which country was selected...
-
-```
-...
-```
+For the country data, I used Michael Bostock's [world-atlas](https://github.com/topojson/world-atlas). I used D3 to generate both a geoJSON and a color coded PNG of this map of countries. With d3 and a geoJSON map imported into Spark AR, I was able to raycast from the player's camera to the globa and use `geoContains` calls to see whether they'd hit the correct country.
 
 ## Challenges I ran into
 
 ### Country Selection Highlighting
 
-I wanted to challenge the player to find countries without all their borders being visible. Instead I wanted to show the player just one country at a time as they scrubbed their cursor over the surface of the globe. I didn't have 3D geometry for all of the borders of the countries, and those I found online had too many polygons. I decided to try using a texture. I used D3 to generate a texture in which every country had a unique color. I then figured out a clever trick to mask out all but a single country from this map. Let's say I wanted to highlight just the country colored red, (1,0,0). I put the entire map through a shader that finds each fragment color's distance from red. All countries will have a non-zero distance except the red one. Now if I subtract that value from 1, all country's values are less than one, other than the red one. Finally, I can raise that value to a high exponent and all the other country's values will drop near zero, except the red one. From there I just alter and have my highlight.
+I wanted to challenge the player to find countries on a bare planet without all their borders visible. Instead I wanted to show the player just one country at a time as they scrubbed their cursor over the surface of the globe. I didn't have 3D geometry for all of the borders of the countries, and those I found online had too many polygons. I decided to try using a color coded texture. I used D3 to generate a texture in which every country had a unique color. I then figured out a clever trick to mask out all but a single country from this map. Let's say I wanted to highlight just the country colored red, (1,0,0). I put the entire map through a shader that finds each fragment color's distance from red. All countries will have a non-zero distance except the red one. Now if I subtract that value from 1, all country's values are less than one, other than the red one. Finally, I can raise that value to a high exponent and all the other country's values will drop near zero, except the red one. From there I just alter and have my highlight.
 
 ### Pausing a Signal
 
@@ -58,10 +50,6 @@ To light the Earth realistically, I used NASA's separate day and night textures.
 
 Another feature that worked well was the atmosphere. I created a Fresnel shader out of patches and use it to create a blue haze that hugs the edges of the earth and thickens as you look through the atmosphere at a lower angle.
 
-```
-record gif of spinning the sun?
-```
-
 ## What I learned
 
 Through completing this project I learned more about:
@@ -72,18 +60,15 @@ Through completing this project I learned more about:
 - Bridging Patches and Scripts
 - Incorporating 3rd party libraries like d3.js
 - Animating UVs and 2D UI elements
+- Particle Systems
+- Audio
 - Effective debugging in Spark AR
 
 ## What's next?
 
-I'm not sure what I'll tackle next, but there's room for:
+There are some countries that are too small to effectively select in AR. For now, you just aren't quized on the smallest countries. I'd like to correct that, as the small countries are very important.
 
-- [ ] The ability to record and share a video of your victory!
-- [ ] Translation into other languages
-- [ ] Difficulty adjustments, especially a better strategy for aiming at small countries.
-- [ ] Data cleanup. There are some issues with the country data I'd like to fix.
-- [ ] Having people start off pointing at the country where they live.
-- [ ] Design upgrades, organization, applying more of what I learned along the way.
+There are some ways of optimizing textures I'd like to try. Some of the imagery I'm using is black and white, and could be combined into the RGBA channels of a single image.
 
 ## Licenses
 
