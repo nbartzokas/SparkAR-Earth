@@ -27,11 +27,22 @@ const BASE_MODEL_TEXTURE_MAP_OFFSET_X = 0.033;
 
 const SELECTED_NONE_TEXT = "...";
 
-const countriesByName = countries110m.features.reduce(
-  (a, c) => Object.assign(a, { [c.properties.name]: c }),
-  {}
-);
-const countryNames = countries110m.features.map((f) => f.properties.name);
+// Apologies to folks from the amazing countries of
+// smaller size. I had to include only countries that
+// a person could reasonably select in AR. I hope to
+// figure out a way to fix this in the future! Sorry!
+const MINIMUM_COUNTRY_SIZE = 0.002;
+
+const countryNames = [];
+const countryNamesMinSize = [];
+const countriesByName = {};
+for (const country of countries110m.features) {
+  countryNames.push(country.properties.name);
+  countriesByName[country.properties.name] = country;
+  if (d3.geoArea(country) > MINIMUM_COUNTRY_SIZE) {
+    countryNamesMinSize.push(country.properties.name);
+  }
+}
 
 // Game state
 const states = {
@@ -74,6 +85,7 @@ Promise.all([
   stateRequest,
 ]) {
   try {
+    // Set up fireworks colors
     const colorArray = Animation.samplers.easeInCubic(
       [1, 1, 1, 1],
       [1, 1, 1, 0]
@@ -89,9 +101,7 @@ Promise.all([
     fireworkBlue.colorModulationHSVADelta = Reactive.HSVA(0.1, 0, 0, 0);
     fireworkBlue.hsvaColorModulationModifier = colorSampler;
 
-    // scale shrink over time
-    //
-
+    // Output sun rotation for earth's day and night textures
     outputSunRotationMatrix(sun);
 
     // Get Camera origin, direction
@@ -213,7 +223,9 @@ Promise.all([
           setState(states.ROUND_STARTED);
           // randomly select country prompt
           targetCountry =
-            countryNames[Math.floor(countryNames.length * Math.random())];
+            countryNamesMinSize[
+              Math.floor(countryNamesMinSize.length * Math.random())
+            ];
           Patches.inputs.setString("targetCountry", targetCountry);
           Diagnostics.log("find: " + targetCountry);
           roundStartTime = t;
